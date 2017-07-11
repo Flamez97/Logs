@@ -1,0 +1,32 @@
+pipeline {
+  agent any
+
+  options {
+    disableConcurrentBuilds()
+  }
+
+  triggers {
+    // every minute
+    cron('* * * * *')
+  }
+
+  stages {
+    stage('Build') {
+      steps {
+        dir('ansible') {
+          ansiColor('xterm') {
+            withCredentials([string(credentialsId: 'vault-password', variable: 'VAULT_PASS')]) {
+              // Ansible can't accept a Vault password through an environment variable, so pass it through indirectly
+              ansiblePlaybook(
+                colorized: true,
+                extras: "--vault-password-file ../jenkins/mysql_to_cloudwatch/vault_pass.sh -e 'install_dir=\"${env.WORKSPACE}/tmp/mysql_to_cloudwatch\"'",
+                inventory: 'hosts-local',
+                playbook: 'playbooks/utils/mysql_to_cloudwatch.yml'
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
