@@ -21,7 +21,7 @@ pipeline {
                 colorized: true,
                 extras: "--vault-password-file ../jenkins/mysql_to_cloudwatch/vault_pass.sh -e 'install_dir=\"${env.WORKSPACE}/tmp/mysql_to_cloudwatch\"'",
                 inventory: 'hosts-local',
-                playbook: 'playbooks/utils/mysql_to_cloudwatch.yml'
+                playbook: 'Logs/mysql_to_cloudwatch/cloudturf.yml'
               )
             }
           }
