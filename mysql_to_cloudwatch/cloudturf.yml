@@ -1,0 +1,56 @@
+---
+- name: Rotate MySQL logs
+  hosts: all
+  vars:
+    env: prod
+  tasks:
+
+    - name: Gather the STS role
+      sts_assume_role:
+        role_arn: "{{ sts_role_arn }}"
+        role_session_name: Provisioning
+        region: "{{ aws_region }}"
+      run_once: true
+      register: assumed_role
+      check_mode: no
+
+    - name: Gather information about the CloudFormation stack
+      cloudformation_facts:
+        aws_access_key: "{{ assumed_role.sts_creds.access_key }}"
+        aws_secret_key: "{{ assumed_role.sts_creds.secret_key }}"
+        security_token: "{{ assumed_role.sts_creds.session_token }}"
+        region: "{{ aws_region }}"
+        stack_name: "{{ stack_name }}"
+
+    - name: Simplify the CloudFormation stack variable
+      set_fact:
+        stack: "{{ cloudformation[stack_name] }}"
+
+    - name: Send MySQL logs to CloudWatch Logs
+      include_role:
+        name: mysql-to-cloudwatch
+      vars:
+        access_key: "{{ assumed_role.sts_creds.access_key }}"
+        db_host: "{{ stack.stack_outputs[item.host_param] }}"
+        db_password: "{{ item.pass }}"
+        db_user: "{{ stack.stack_parameters[item.user_param] }}"
+        log_group_name: RDSLogs
+        region: "{{ aws_region }}"
+        secret_key: "{{ assumed_role.sts_creds.secret_key }}"
+        session_token: "{{ assumed_role.sts_creds.session_token }}"
+      with_items:
+        - host_param: AlfrescoDB
+          user_param: AlfrescoDBUsername
+          pass: "{{ alfresco_db_admin_pass }}"
+        - host_param: MicrostrategyDB
+          user_param: MicrostrategyDBUsername
+          pass: "{{ microstrategy_db_admin_pass }}"
+        - host_param: JasperDB
+          user_param: JasperDBUsername
+          pass: "{{ jasper_db_admin_pass }}"
+        - host_param: CustomerDataDB
+          user_param: CustomerDataDBUsername
+          pass: "{{ customer_data_db_admin_pass }}"
+        - host_param: DrupalDB
+          user_param: DrupalDBUsername
+pass: "{{ portal_db_admin_pass }}"
