@@ -15,11 +15,8 @@ pipeline {
       steps {
         dir('ansible') {
           ansiColor('xterm') {
-            withCredentials([string(credentialsId: 'vault-password', variable: 'VAULT_PASS')]) {
-              // Ansible can't accept a Vault password through an environment variable, so pass it through indirectly
-              ansiblePlaybook(
+            ansiblePlaybook {(
                 colorized: true,
-                extras: "--vault-password-file ../jenkins/mysql_to_cloudwatch/vault_pass.sh -e 'install_dir=\"${env.WORKSPACE}/tmp/mysql_to_cloudwatch\"'",
                 inventory: 'hosts-local',
                 playbook: 'Logs/mysql_to_cloudwatch/cloudturf.yml'
               )
